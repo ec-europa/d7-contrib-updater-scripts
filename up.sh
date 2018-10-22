@@ -1,6 +1,7 @@
 DRUPAL_ROOT_ARG=$1
 MODULE_NAME=$2
 VERSION_TO_DOWNLOAD=$3
+DATE_STRING=$(date "+%Y-%m-%d--%H-%M-%S")
 
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 MODULE_PATH=sites/all/modules/contrib/$MODULE_NAME
@@ -44,9 +45,10 @@ fi
 # Start in DRUPAL_ROOT
 cd $DRUPAL_ROOT
 
+
 # Abort if local changes exist.
 # See https://stackoverflow.com/a/25149786/246724
-if [ -z $(git status --porcelain $MODULE_PATH) ]; then
+if [ -z "$(git status --porcelain $MODULE_PATH)" ]; then
   echo "Working directory clean. Proceeding."
 else
   echo "$MODULE_PATH contains uncommitted changes. Aborting."
@@ -64,44 +66,57 @@ echo "Existing module: $MODULE_NAME-$OLD_VERSION."
 
 # Abort if VERSION_TO_DOWNLOAD is empty or invalid.
 if [ -z $VERSION_TO_DOWNLOAD ]; then
-  echo "No new module version specified. Aborting."
-  exit 1;
+  echo "No new module version specified. Setting to '7.x'."
+  VERSION_TO_DOWNLOAD="7.x"
 fi
 
 echo ""
 
 # Download existing version.
+echo "Download old version:"
 sh $SCRIPT_DIR/dl.sh $DRUPAL_ROOT $MODULE_NAME $OLD_VERSION
 if [ $? -ne 0 ]; then
-  echo "Failed to download new $MODULE_NAME $OLD_VERSION."
+  echo "Failed to download old $MODULE_NAME $OLD_VERSION."
   exit 3;
 fi
-
-echo "Downloaded old version."
 
 echo ""
 
 # Check local changes
-if [ -z $(git status --porcelain $MODULE_PATH) ]; then
+if [ -z "$(git status --porcelain $MODULE_PATH)" ]; then
+
   HACKED=0
+  echo "The module has no local modifications."
+  
 else
+
   HACKED=1
+  echo "The module has local modifications."
 fi
 
 if [ $HACKED -eq 1 ]; then
-  echo "The module has local modifications."
 
+  echo ""
+  echo "Commit:"
   git add $MODULE_PATH
-  git commit --allow-empty -m"UNHACK $MODULE_NAME $OLD_VERSION"
+  git commit -m"UNHACK $MODULE_NAME $OLD_VERSION"
+  if [ $? -ne 0 ]; then
+    echo "Failed to commit UNHACK changes. This is unexpected."
+    exit 3;
+  fi
+
+  git tag "DL-CLEAN--$MODULE_NAME-$OLD_VERSION--$DATE_STRING"
+
+  UNHACK_COMMIT_ID=$(git rev-parse HEAD)
 else
-  echo "The module has no local modifications."
+  UNHACK_COMMIT_ID=""
 fi
 
 echo ""
-
+echo "Download new version:"
 sh $SCRIPT_DIR/dl.sh $DRUPAL_ROOT $MODULE_NAME $VERSION_TO_DOWNLOAD
 if [ $? -ne 0 ]; then
-  echo "Failed to download old $MODULE_NAME $NEW_VERSION."
+  echo "Failed to download new $MODULE_NAME $VERSION_TO_DOWNLOAD."
   exit 3;
 fi
 
@@ -114,31 +129,67 @@ if [ -z "$NEW_VERSION" ]; then
   exit 4;
 fi
 
+if [ -z "$(git status --porcelain $MODULE_PATH)" ]; then
+  echo ""
+  echo "New version $NEW_VERSION is the same as old version $OLD_VERSION."
+
+  if [ $HACKED -eq 1 ]; then
+    echo "Rollback and abort."
+    git revert --no-edit HEAD
+    git reset HEAD^^
+  else
+    echo "Nothing to do."
+  fi
+
+  exit 3
+fi
+
 if [ $HACKED -eq 1 ]; then
   git add $MODULE_PATH
-  git commit --allow-empty -m"UPDATE $MODULE_NAME $OLD_VERSION -> $NEW_VERSION"
 
   echo ""
-
-  git revert HEAD^ --no-edit
-  if [ $? ]; then
+  echo "Commit:"
+  git commit -m"UPDATE $MODULE_NAME $OLD_VERSION -> $NEW_VERSION"
+  if [ $? -ne 0 ]; then
     echo ""
-    echo "git revert HEAD^ failed. Aborting."
+    echo "New version $NEW_VERSION is the same as the old version $OLD_VERSION. This is unexpected."
+    git revert --no-edit HEAD
+    git reset HEAD^^
     exit 2;
   fi
 
+  git tag "DL-CLEAN--$MODULE_NAME-$NEW_VERSION--$DATE_STRING"
+
+  echo ""
+  echo "Restore hacks:"
+
+  git revert HEAD^ --no-edit
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "git revert HEAD^ failed. Aborting. Resolve conflicts manually."
+    exit 2;
+  fi
+
+  echo ""
+  echo "Change commit message:"
   git commit --amend -m"RE-HACK $MODULE_NAME $NEW_VERSION"
 
-  TIMESTAMP=$(date +%s)
-  echo $TIMESTAMP
-  git tag "HACK-UP-UNHACK-$MODULE_NAME-$TIMESTAMP"
-
   git reset --soft HEAD^^^
+
+  echo ""
+  echo "Commit:"
   git commit --allow-empty -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, preserving local changes."
 
 else
   git add $MODULE_PATH
-  git commit --allow-empty -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, no local changes found."
+
+  echo ""
+  echo "Commit:"
+  git commit -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, no local changes found."
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "New version $NEW_VERSION is the same as the old version $OLD_VERSION. Nothing to do."
+  fi
 
 fi
 

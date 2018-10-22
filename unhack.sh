@@ -1,6 +1,5 @@
 DRUPAL_ROOT_ARG=$1
 MODULE_NAME=$2
-VERSION_TO_DOWNLOAD=$3
 
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 MODULE_PATH=sites/all/modules/contrib/$MODULE_NAME
@@ -61,12 +60,6 @@ if [ -z "$OLD_VERSION" ]; then
 fi
 
 echo "Existing module: $MODULE_NAME-$OLD_VERSION."
-
-# Abort if VERSION_TO_DOWNLOAD is empty or invalid.
-if [ -z $VERSION_TO_DOWNLOAD ]; then
-  echo "No new module version specified. Aborting."
-  exit 1;
-fi
 
 echo ""
 
