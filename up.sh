@@ -1,8 +1,10 @@
+# CLI parameters
 DRUPAL_ROOT_ARG=$1
 MODULE_NAME=$2
 VERSION_TO_DOWNLOAD=$3
-DATE_STRING=$(date "+%Y-%m-%d--%H-%M-%S")
 
+# ENV variables
+DATE_STRING=$(date "+%Y-%m-%d--%H-%M-%S")
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 MODULE_PATH=sites/all/modules/contrib/$MODULE_NAME
 
