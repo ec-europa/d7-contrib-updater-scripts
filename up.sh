@@ -8,6 +8,15 @@ DATE_STRING=$(date "+%Y-%m-%d--%H-%M-%S")
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 MODULE_PATH=sites/all/modules/contrib/$MODULE_NAME
 
+PATCH_DIR=patch/contrib
+PATCH_FILE=$PATCH_DIR/$MODULE_NAME.patch
+
+if [ ! -d $PATCH_DIR ]; then
+  echo ""
+  echo "Create patch directory $PATCH_DIR."
+  mkdir -p $PATCH_DIR
+fi
+
 echo ""
 
 # Abort if DRUPAL_ROOT_ARG is empty.
@@ -50,10 +59,19 @@ cd $DRUPAL_ROOT
 
 # Abort if local changes exist.
 # See https://stackoverflow.com/a/25149786/246724
-if [ -z "$(git status --porcelain $MODULE_PATH)" ]; then
-  echo "Working directory clean. Proceeding."
+if [ -z "$(git status --porcelain -- $MODULE_PATH)" ]; then
+  echo "Module directory $MODULE_PATH clean. Proceeding."
 else
-  echo "$MODULE_PATH contains uncommitted changes. Aborting."
+  echo "Module directory $MODULE_PATH contains uncommitted changes. Aborting."
+  exit 1;
+fi
+
+# Abort if local changes exist in patch file path.
+# See https://stackoverflow.com/a/25149786/246724
+if [ -z "$(git status --porcelain -- $PATCH_FILE)" ]; then
+  echo "Patch path $PATCH_FILE clean. Proceeding."
+else
+  echo "Patch path $PATCH_FILE contains uncommitted changes. Aborting."
   exit 1;
 fi
 
@@ -85,7 +103,7 @@ fi
 echo ""
 
 # Check local changes
-if [ -z "$(git status --porcelain $MODULE_PATH)" ]; then
+if [ -z "$(git status --porcelain -- $MODULE_PATH)" ]; then
 
   HACKED=0
   echo "The module has no local modifications."
@@ -98,6 +116,28 @@ fi
 
 if [ $HACKED -eq 1 ]; then
 
+  # Create the patch.
+  if [ -f $PATCH_FILE ]; then
+    # A patch file already exists.
+    git diff -R --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
+      echo "Existing patch $PATCH_FILE for $MODULE_NAME $OLD_VERSION is already up to date."
+    else
+      echo "Update patch."
+      git add -- $PATCH_FILE
+      git commit -m"Update patch $PATCH_FILE for $MODULE_NAME $OLD_VERSION."
+    fi
+  else
+    # A patch file does not already exists.
+    git diff -R --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git add -- $PATCH_FILE
+    git commit -m"Create patch $PATCH_FILE for $MODULE_NAME $OLD_VERSION."
+  fi
+
+  if [ -d /tmp/drush-dl ]; then
+    rm -r /tmp/drush-dl
+  fi
+
   echo ""
   echo "Commit:"
   git add $MODULE_PATH
@@ -107,10 +147,17 @@ if [ $HACKED -eq 1 ]; then
     exit 3;
   fi
 
-  git tag "DL-CLEAN--$MODULE_NAME-$OLD_VERSION--$DATE_STRING"
-
   UNHACK_COMMIT_ID=$(git rev-parse HEAD)
+
 else
+  # No hacks exist.
+  if [ -f $PATCH_FILE ]; then
+    echo "Delete patch $PATCH_FILE."
+    rm $PATCH_FILE
+    git add -u -- $PATCH_FILE
+    git commit -m"Delete patch $PATCH_FILE for $MODULE_NAME $OLD_VERSION."
+  fi
+
   UNHACK_COMMIT_ID=""
 fi
 
@@ -160,27 +207,45 @@ if [ $HACKED -eq 1 ]; then
     exit 2;
   fi
 
-  git tag "DL-CLEAN--$MODULE_NAME-$NEW_VERSION--$DATE_STRING"
-
   echo ""
   echo "Restore hacks:"
 
   git revert HEAD^ --no-edit
-  if [ $? -ne 0 ]; then
+  if [ $? -eq 0 ]; then
+
+    git diff HEAD^ HEAD --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+
+    if [ -z "$(git status --porcelain -- $PATCH_FILE)" ]; then
+      git reset --soft HEAD^^^
+      echo ""
+      echo "Commit:"
+      git commit --allow-empty -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, preserving local changes, patch not modified."
+
+    else
+      git reset --soft HEAD^^^
+      git add -- $PATCH_FILE
+      echo ""
+      echo "Commit:"
+      git commit --allow-empty -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, some previous changes already included, patch reduced."
+
+    fi
+
+  elif [ -z "$(git status --porcelain -- $MODULE_PATH)" ]; then
+    echo ""
+    echo "Previous hacks already included."
+
+    rm $PATCH_FILE
+    git reset --soft HEAD^^
+    git add -u -- $PATCH_FILE
+
+    git commit --allow-empty -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, all previous changes already included, patch removed."
+
+  else
     echo ""
     echo "git revert HEAD^ failed. Aborting. Resolve conflicts manually."
     exit 2;
   fi
 
-  echo ""
-  echo "Change commit message:"
-  git commit --amend -m"RE-HACK $MODULE_NAME $NEW_VERSION"
-
-  git reset --soft HEAD^^^
-
-  echo ""
-  echo "Commit:"
-  git commit --allow-empty -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, preserving local changes."
 
 else
   git add $MODULE_PATH
