@@ -4,15 +4,6 @@ DRUPAL_ROOT_ARG=$1
 # ENV variables
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 
-PATCH_DIR=patch
-PATCH_FILE=$PATCH_DIR/core.patch
-
-if [ ! -d $PATCH_DIR ]; then
-  echo ""
-  echo "Create patch directory $PATCH_DIR."
-  mkdir -p $PATCH_DIR
-fi
-
 echo ""
 
 # Abort if DRUPAL_ROOT_ARG is empty.
@@ -33,6 +24,21 @@ fi
 # Abort if DRUPAL_ROOT is not a Drupal directory.
 if [ ! -f $SYSTEM_INFO_FILE ]; then
   echo "$SYSTEM_INFO_FILE does not exist. Aborting."
+  exit 1;
+fi
+
+PATCH_DIR=$DRUPAL_ROOT/patch
+PATCH_FILE=$PATCH_DIR/core.patch
+
+if [ ! -d $PATCH_DIR ]; then
+  echo ""
+  echo "Create patch directory $PATCH_DIR."
+  mkdir -p $PATCH_DIR
+fi
+
+if [ ! -d $PATCH_DIR ]; then
+  echo ""
+  echo "Failed to create patch directory $PATCH_DIR."
   exit 1;
 fi
 

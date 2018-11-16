@@ -6,15 +6,6 @@ MODULE_NAME=$2
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 MODULE_PATH=sites/all/modules/contrib/$MODULE_NAME
 
-PATCH_DIR=patch/contrib
-PATCH_FILE=$PATCH_DIR/$MODULE_NAME.patch
-
-if [ ! -d $PATCH_DIR ]; then
-  echo ""
-  echo "Create patch directory $PATCH_DIR."
-  mkdir -p $PATCH_DIR
-fi
-
 echo ""
 
 # Abort if DRUPAL_ROOT_ARG is empty.
@@ -48,6 +39,21 @@ fi
 # Abort if MODULE_DIR does not exist.
 if [ ! -d $MODULE_DIR ]; then
   echo "$MODULE_DIR does not exist. Aborting."
+  exit 1;
+fi
+
+PATCH_DIR=$DRUPAL_ROOT/patch/contrib
+PATCH_FILE=$PATCH_DIR/$MODULE_NAME.patch
+
+if [ ! -d $PATCH_DIR ]; then
+  echo ""
+  echo "Create patch directory $PATCH_DIR."
+  mkdir -p $PATCH_DIR
+fi
+
+if [ ! -d $PATCH_DIR ]; then
+  echo ""
+  echo "Failed to create patch directory $PATCH_DIR."
   exit 1;
 fi
 
