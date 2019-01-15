@@ -117,7 +117,7 @@ if [ $HACKED -eq 1 ]; then
   # Create the patch.
   if [ -f $PATCH_FILE ]; then
     # A patch file already exists.
-    git diff -R --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git diff -R --full-index --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
     if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
       echo "Existing patch $PATCH_FILE for $MODULE_NAME $OLD_VERSION is already up to date."
     else
@@ -127,7 +127,7 @@ if [ $HACKED -eq 1 ]; then
     fi
   else
     # A patch file does not already exists.
-    git diff -R --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git diff -R --full-index --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
     git add -- $PATCH_FILE
     git commit -m"Create patch $PATCH_FILE for $MODULE_NAME $OLD_VERSION."
   fi
