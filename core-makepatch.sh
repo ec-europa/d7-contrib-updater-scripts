@@ -90,7 +90,11 @@ if [ $HACKED -eq 1 ]; then
   # Create the patch.
   if [ -f $PATCH_FILE ]; then
     # A patch file already exists.
-    git diff --full-index -R > $PATCH_FILE
+    # Call 'git add', to also include untracked files in the diff.
+    # Exclude /patch/ directory.
+    git add -- ':!patch'
+    git diff --full-index -R --staged --patch > $PATCH_FILE
+    git reset HEAD
     if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
       echo "Existing patch $PATCH_FILE for Drupal core $OLD_VERSION is already up to date."
     else
@@ -100,7 +104,11 @@ if [ $HACKED -eq 1 ]; then
     fi
   else
     # A patch file does not already exists.
-    git diff --full-index -R > $PATCH_FILE
+    # Call 'git add', to also include untracked files in the diff.
+    # Exclude /patch/ directory.
+    git add -- ':!patch'
+    git diff --full-index -R --staged --patch > $PATCH_FILE
+    git reset HEAD
     git add -- $PATCH_FILE
     git commit -m"Create patch $PATCH_FILE for Drupal core $OLD_VERSION."
   fi
