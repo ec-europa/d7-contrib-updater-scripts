@@ -59,6 +59,6 @@ rm index.php
 rm robots.txt
 rm update.php
 
-rsync -av /tmp/drush-dl/drupal/ $DRUPAL_ROOT/
+rsync -a /tmp/drush-dl/drupal/ $DRUPAL_ROOT/
 # rm -r /tmp/drush-dl/drupal
 
