@@ -62,3 +62,11 @@ rm update.php
 rsync -a /tmp/drush-dl/drupal/ $DRUPAL_ROOT/
 # rm -r /tmp/drush-dl/drupal
 
+# Optional script hook to run after core download.
+# This allows e.g. to remove files like CHANGELOG.txt
+PATCH_DIR=$DRUPAL_ROOT/patch
+CORE_POST_SH=$PATCH_DIR/core.post.sh
+
+if [ -f $CORE_POST_SH ]; then
+  sh $CORE_POST_SH
+fi
