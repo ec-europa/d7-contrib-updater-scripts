@@ -93,7 +93,7 @@ if [ $HACKED -eq 1 ]; then
     # Call 'git add', to also include untracked files in the diff.
     # Exclude /patch/ directory.
     git add -- ':!patch'
-    git diff --full-index -R --staged --patch > $PATCH_FILE
+    git diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch > $PATCH_FILE
     git reset HEAD
     if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
       echo "Existing patch for Drupal core $OLD_VERSION is already up to date."
@@ -107,7 +107,7 @@ if [ $HACKED -eq 1 ]; then
     # Call 'git add', to also include untracked files in the diff.
     # Exclude /patch/ directory.
     git add -- ':!patch'
-    git diff --full-index -R --staged --patch > $PATCH_FILE
+    git diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch > $PATCH_FILE
     git reset HEAD
     git add -- $PATCH_FILE
     git commit -m"Create patch for Drupal core $OLD_VERSION."
