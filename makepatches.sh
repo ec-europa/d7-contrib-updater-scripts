@@ -27,7 +27,11 @@ if [ ! -f $SYSTEM_INFO_FILE ]; then
   exit 1;
 fi
 
-PATCH_DIR=$DRUPAL_ROOT/patch/contrib
+if [ -d "$DRUPAL_ROOT/.git" ]; then
+  PATCH_DIR=$DRUPAL_ROOT/patch/contrib
+else
+  PATCH_DIR="$(dirname $DRUPAL_ROOT)/patch/contrib"
+fi
 
 if [ ! -d $PATCH_DIR ]; then
   echo ""

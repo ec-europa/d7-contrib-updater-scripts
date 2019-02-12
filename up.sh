@@ -44,7 +44,12 @@ if [ ! -d $MODULE_DIR ]; then
   exit 1;
 fi
 
-PATCH_DIR=$DRUPAL_ROOT/patch/contrib
+if [ -d "$DRUPAL_ROOT/.git" ]; then
+  PATCH_DIR=$DRUPAL_ROOT/patch/contrib
+else
+  PATCH_DIR="$(dirname $DRUPAL_ROOT)/patch/contrib"
+fi
+
 PATCH_FILE=$PATCH_DIR/$MODULE_NAME.patch
 
 if [ ! -d $PATCH_DIR ]; then
