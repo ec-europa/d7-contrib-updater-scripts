@@ -96,11 +96,11 @@ if [ $HACKED -eq 1 ]; then
     git diff --full-index -R --staged --patch > $PATCH_FILE
     git reset HEAD
     if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
-      echo "Existing patch $PATCH_FILE for Drupal core $OLD_VERSION is already up to date."
+      echo "Existing patch for Drupal core $OLD_VERSION is already up to date."
     else
       echo "Update patch."
       git add -- $PATCH_FILE
-      git commit -m"Update patch $PATCH_FILE for Drupal core $OLD_VERSION."
+      git commit -m"Update patch for Drupal core $OLD_VERSION."
     fi
   else
     # A patch file does not already exists.
@@ -110,7 +110,7 @@ if [ $HACKED -eq 1 ]; then
     git diff --full-index -R --staged --patch > $PATCH_FILE
     git reset HEAD
     git add -- $PATCH_FILE
-    git commit -m"Create patch $PATCH_FILE for Drupal core $OLD_VERSION."
+    git commit -m"Create patch for Drupal core $OLD_VERSION."
   fi
 
   if [ -d /tmp/drush-dl ]; then
@@ -134,7 +134,7 @@ else
     echo "Delete patch $PATCH_FILE."
     rm $PATCH_FILE
     git add -u -- $PATCH_FILE
-    git commit -m"Delete patch $PATCH_FILE for Drupal core $OLD_VERSION."
+    git commit -m"Delete patch for Drupal core $OLD_VERSION."
   fi
 
 fi
