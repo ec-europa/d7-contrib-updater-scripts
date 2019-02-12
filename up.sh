@@ -233,7 +233,7 @@ if [ $HACKED -eq 1 ]; then
       git add -- $PATCH_FILE
       echo ""
       echo "Commit:"
-      git commit --allow-empty -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, some previous changes already included, patch reduced."
+      git commit --allow-empty -m"(up) $MODULE_NAME $OLD_VERSION -> $NEW_VERSION, update patch."
 
     fi
 
