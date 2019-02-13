@@ -92,7 +92,8 @@ if [ $HACKED -eq 1 ]; then
     # A patch file already exists.
     # Call 'git add', to also include untracked files in the diff.
     # Exclude /patch/ directory.
-    git add -- ':!patch'
+    git add .
+    git reset HEAD patch
     git diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch > $PATCH_FILE
     git reset HEAD
     if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
@@ -106,7 +107,8 @@ if [ $HACKED -eq 1 ]; then
     # A patch file does not already exists.
     # Call 'git add', to also include untracked files in the diff.
     # Exclude /patch/ directory.
-    git add -- ':!patch'
+    git add .
+    git reset HEAD patch
     git diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch > $PATCH_FILE
     git reset HEAD
     git add -- $PATCH_FILE
