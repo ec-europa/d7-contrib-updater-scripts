@@ -49,7 +49,10 @@ cd $DRUPAL_ROOT
 rm -r includes
 rm -r misc
 rm -r modules
-rm -r profiles
+rm -r profiles/minimal
+rm profiles/README.txt
+rm -r profiles/standard
+rm -r profiles/testing
 rm -r scripts
 rm -r themes
 rm authorize.php
