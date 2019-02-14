@@ -90,8 +90,6 @@ if [ $HACKED -eq 1 ]; then
     exit 3;
   fi
 
-  git tag "DL-CLEAN-CORE-$OLD_VERSION--$DATE_STRING"
-
   UNHACK_COMMIT_ID=$(git rev-parse HEAD)
 else
   UNHACK_COMMIT_ID=""
@@ -142,8 +140,6 @@ if [ $HACKED -eq 1 ]; then
     git reset HEAD^^
     exit 2;
   fi
-
-  git tag "DL-CLEAN-CORE-$NEW_VERSION--$DATE_STRING"
 
   echo ""
   echo "Restore hacks:"
