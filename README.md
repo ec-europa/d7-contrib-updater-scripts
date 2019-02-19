@@ -43,7 +43,7 @@ Update a module, preserving hacks, and commit:
 
 Update core, preserving hacks, and commit:
 
-    sh ~/path/to/scripts/up-core.sh ~/path/to/drupal
+    sh ~/path/to/scripts/core-up.sh ~/path/to/drupal
 
 Determine current module version:
 
