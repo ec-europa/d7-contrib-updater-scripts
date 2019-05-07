@@ -1,6 +1,7 @@
 DRUPAL_ROOT_ARG=$1
 MODULE_NAME=$2
 VERSION_TO_DOWNLOAD=$3
+SCRIPT_DIR=$(dirname $(readlink -f $0))
 MODULE_PATH=sites/all/modules/contrib/$MODULE_NAME
 
 # Abort if DRUPAL_ROOT_ARG is empty.
@@ -33,8 +34,11 @@ fi
 
 # Abort if VERSION_TO_DOWNLOAD is empty or invalid.
 if [ -z $VERSION_TO_DOWNLOAD ]; then
-  echo "No module version specified. Aborting dl.sh."
-  exit 1;
+  VERSION_TO_DOWNLOAD=$(sh $SCRIPT_DIR/getversion.sh $DRUPAL_ROOT $MODULE_NAME)
+  if [ -z $VERSION_TO_DOWNLOAD ]; then
+    echo "No module version specified, and current version cannot be determined. Aborting dl.sh."
+    exit 1;
+  fi
 fi
 
 # Download project in desired version in /tmp.
