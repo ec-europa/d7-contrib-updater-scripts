@@ -101,7 +101,7 @@ fi
 echo ""
 
 # Check local changes
-if [ -z "$(git status --porcelain -- $MODULE_PATH)" ]; then
+if [ -z "$(git -c core.fileMode=true status --porcelain -- $MODULE_PATH)" ]; then
 
   HACKED=0
   echo "The module has no local modifications."

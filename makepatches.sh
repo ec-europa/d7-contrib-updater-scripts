@@ -46,7 +46,7 @@ cd $DRUPAL_ROOT
 
 # Abort if local changes exist.
 # See https://stackoverflow.com/a/25149786/246724
-if [ -z "$(git status --porcelain -- sites/all/modules/contrib)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain -- sites/all/modules/contrib)" ]; then
   echo "Module directory sites/all/modules/contrib clean. Proceeding."
 else
   echo "Module directory sites/all/modules/contrib contains uncommitted changes. Aborting."
@@ -55,7 +55,7 @@ fi
 
 # Abort if local changes exist in patch file path.
 # See https://stackoverflow.com/a/25149786/246724
-if [ -z "$(git status --porcelain -- $PATCH_DIR)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain -- $PATCH_DIR)" ]; then
   echo "Patch path $PATCH_DIR clean. Proceeding."
 else
   echo "Patch path $PATCH_DIR contains uncommitted changes. Aborting."

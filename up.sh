@@ -65,7 +65,7 @@ cd $DRUPAL_ROOT
 
 # Abort if local changes exist.
 # See https://stackoverflow.com/a/25149786/246724
-if [ -z "$(git status --porcelain -- $MODULE_PATH)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain -- $MODULE_PATH)" ]; then
   echo "Module directory $MODULE_PATH clean. Proceeding."
 else
   echo "Module directory $MODULE_PATH contains uncommitted changes. Aborting up.sh."
@@ -74,7 +74,7 @@ fi
 
 # Abort if local changes exist in patch file path.
 # See https://stackoverflow.com/a/25149786/246724
-if [ -z "$(git status --porcelain -- $PATCH_FILE)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain -- $PATCH_FILE)" ]; then
   echo "Patch path $PATCH_FILE clean. Proceeding."
 else
   echo "Patch path $PATCH_FILE contains uncommitted changes. Aborting."
@@ -109,7 +109,7 @@ fi
 echo ""
 
 # Check local changes
-if [ -z "$(git status --porcelain -- $MODULE_PATH)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain -- $MODULE_PATH)" ]; then
 
   HACKED=0
   echo "The module has no local modifications."
@@ -184,7 +184,7 @@ if [ -z "$NEW_VERSION" ]; then
   exit 4;
 fi
 
-if [ -z "$(git status --porcelain $MODULE_PATH)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain $MODULE_PATH)" ]; then
   echo ""
   echo "New version $NEW_VERSION is the same as old version $OLD_VERSION."
 
@@ -237,7 +237,7 @@ if [ $HACKED -eq 1 ]; then
 
     fi
 
-  elif [ -z "$(git status --porcelain -- $MODULE_PATH)" ]; then
+  elif [ -z "$(git -c core.fileMode=false status --porcelain -- $MODULE_PATH)" ]; then
     echo ""
     echo "Previous hacks already included."
 

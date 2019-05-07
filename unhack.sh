@@ -45,7 +45,7 @@ cd $DRUPAL_ROOT
 
 # Abort if local changes exist.
 # See https://stackoverflow.com/a/25149786/246724
-if [ -z $(git status --porcelain $MODULE_PATH) ]; then
+if [ -z $(git -c core.fileMode=false status --porcelain $MODULE_PATH) ]; then
   echo "Working directory clean. Proceeding."
 else
   echo "$MODULE_PATH contains uncommitted changes. Aborting."
@@ -75,7 +75,7 @@ echo "Downloaded old version."
 echo ""
 
 # Check local changes
-if [ -z $(git status --porcelain $MODULE_PATH) ]; then
+if [ -z $(git -c core.fileMode=false status --porcelain $MODULE_PATH) ]; then
   HACKED=0
 else
   HACKED=1

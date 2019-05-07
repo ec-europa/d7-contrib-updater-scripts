@@ -47,7 +47,7 @@ cd $DRUPAL_ROOT
 
 # Abort if local changes exist in patch file path.
 # See https://stackoverflow.com/a/25149786/246724
-if [ ! -z "$(git status --porcelain)" ]; then
+if [ ! -z "$(git -c core.fileMode=false status --porcelain)" ]; then
   echo "Repository contains uncommitted changes. Aborting."
   exit 1;
 fi
@@ -74,7 +74,7 @@ fi
 echo ""
 
 # Check local changes
-if [ -z "$(git status --porcelain)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain)" ]; then
 
   HACKED=0
   echo "Drupal core has no local modifications."
@@ -94,9 +94,9 @@ if [ $HACKED -eq 1 ]; then
     # Exclude /patch/ directory.
     git add .
     git reset HEAD patch
-    git diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch > $PATCH_FILE
+    git -c core.fileMode=false diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch --binary > $PATCH_FILE
     git reset HEAD
-    if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
+    if [ -z "$(git -c core.fileMode=false status --porcelain $PATCH_FILE)" ]; then
       echo "Existing patch for Drupal core $OLD_VERSION is already up to date."
     else
       echo "Update patch."
@@ -109,7 +109,7 @@ if [ $HACKED -eq 1 ]; then
     # Exclude /patch/ directory.
     git add .
     git reset HEAD patch
-    git diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch > $PATCH_FILE
+    git -c core.fileMode=false diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch --binary > $PATCH_FILE
     git reset HEAD
     git add -- $PATCH_FILE
     git commit -m"Create patch for Drupal core $OLD_VERSION."

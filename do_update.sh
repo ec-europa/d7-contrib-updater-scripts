@@ -57,7 +57,7 @@ cd $DRUPAL_ROOT
 
 # Abort if local changes exist.
 # See https://stackoverflow.com/a/25149786/246724
-if [[`git status --porcelain $MODULE_PATH`]]; then
+if [[`git -c core.fileMode=false status --porcelain $MODULE_PATH`]]; then
   echo "$MODULE_PATH contains uncommitted changes. Aborting."
   exit 1;
 fi
@@ -66,7 +66,7 @@ fi
 sh $SCRIPT_DIR/dl.sh $DRUPAL_ROOT $MODULE_NAME $OLD_VERSION
 
 # Check local changes
-if [[`git status --porcelain $MODULE_PATH`]]; then
+if [[`git -c core.fileMode=false status --porcelain $MODULE_PATH`]]; then
   echo "The module has local modifications."
 
   git add $MODULE_PATH

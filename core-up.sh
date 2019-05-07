@@ -33,7 +33,7 @@ cd $DRUPAL_ROOT
 
 # Abort if local changes exist.
 # See https://stackoverflow.com/a/25149786/246724
-if [ -z "$(git status --porcelain .)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain .)" ]; then
   echo "Working directory clean. Proceeding."
 else
   echo "Drupal contains uncommitted changes. Aborting."
@@ -68,7 +68,7 @@ fi
 echo ""
 
 # Check local changes
-if [ -z "$(git status --porcelain .)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain .)" ]; then
 
   HACKED=0
   echo "Drupal core has no local modifications."
@@ -112,7 +112,7 @@ if [ -z "$NEW_VERSION" ]; then
   exit 4;
 fi
 
-if [ -z "$(git status --porcelain .)" ]; then
+if [ -z "$(git -c core.fileMode=false status --porcelain .)" ]; then
   echo ""
   echo "New version $NEW_VERSION is the same as old version $OLD_VERSION."
 
