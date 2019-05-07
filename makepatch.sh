@@ -145,7 +145,8 @@ if [ $HACKED -eq 1 ]; then
     exit 3;
   fi
 
-  git reset --hard HEAD^
+  git revert --no-edit HEAD
+  git reset HEAD^^
 
 else
   # No hacks exist.
