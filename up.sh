@@ -125,8 +125,10 @@ if [ $HACKED -eq 1 ]; then
   # Create the patch.
   if [ -f $PATCH_FILE ]; then
     # A patch file already exists.
-    git diff --src-prefix="b/" --dst-prefix="a/" -R --full-index --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
-    if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
+    git -c core.fileMode=false add $MODULE_PATH
+    git -c core.fileMode=false diff --staged --src-prefix="b/" --dst-prefix="a/" -R --full-index --binary --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git -c core.fileMode=false reset $MODULE_PATH
+    if [ -z "$(git -c core.fileMode=false status --porcelain $PATCH_FILE)" ]; then
       echo "Existing patch for $MODULE_NAME $OLD_VERSION is already up to date."
     else
       echo "Update patch."
@@ -135,7 +137,9 @@ if [ $HACKED -eq 1 ]; then
     fi
   else
     # A patch file does not already exists.
-    git diff --src-prefix="b/" --dst-prefix="a/"  -R --full-index --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git -c core.fileMode=false add $MODULE_PATH
+    git -c core.fileMode=false diff --staged --src-prefix="b/" --dst-prefix="a/"  -R --full-index --binary --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git -c core.fileMode=false reset $MODULE_PATH
     git add -- $PATCH_FILE
     git commit -m"Create patch for $MODULE_NAME $OLD_VERSION."
   fi
@@ -220,9 +224,11 @@ if [ $HACKED -eq 1 ]; then
   if [ $? -eq 0 ]; then
 
     # Swap 'a/' and 'b/' in header, to produce same output as other diff commands that use '-R' option.
-    git diff --src-prefix="a/" --dst-prefix="b/" --full-index HEAD^ HEAD --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git -c core.fileMode=false add $MODULE_PATH
+    git -c core.fileMode=false diff --staged --src-prefix="a/" --dst-prefix="b/" --full-index --binary HEAD^ HEAD --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git -c core.fileMode=false reset $MODULE_PATH
 
-    if [ -z "$(git status --porcelain -- $PATCH_FILE)" ]; then
+    if [ -z "$(git -c core.fileMode=false status --porcelain -- $PATCH_FILE)" ]; then
       git reset --soft HEAD^^^
       echo ""
       echo "Commit:"

@@ -106,6 +106,12 @@ if [ -z "$(git -c core.fileMode=true status --porcelain -- $MODULE_PATH)" ]; the
   HACKED=0
   echo "The module has no local modifications."
   
+elif [ -z "$(git -c core.fileMode=false status --porcelain -- $MODULE_PATH)" ]; then
+
+  HACKED=0
+  echo "The module has no local modifications, but some files have wrong file mode."
+  git -c core.fileMode=true checkout $MODULE_PATH
+
 else
 
   HACKED=1
@@ -117,8 +123,10 @@ if [ $HACKED -eq 1 ]; then
   # Create the patch.
   if [ -f $PATCH_FILE ]; then
     # A patch file already exists.
-    git diff --src-prefix="b/" --dst-prefix="a/" -R --full-index --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
-    if [ -z "$(git status --porcelain $PATCH_FILE)" ]; then
+    git -c core.fileMode=false add -- $MODULE_PATH
+    git -c core.fileMode=false diff --staged --src-prefix="b/" --dst-prefix="a/" -R --full-index --binary --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git -c core.fileMode=false reset -- $MODULE_PATH
+    if [ -z "$(git -c core.fileMode=false status --porcelain $PATCH_FILE)" ]; then
       echo "Existing patch for $MODULE_NAME $OLD_VERSION is already up to date."
     else
       echo "Update patch."
@@ -127,7 +135,9 @@ if [ $HACKED -eq 1 ]; then
     fi
   else
     # A patch file does not already exists.
-    git diff --src-prefix="b/" --dst-prefix="a/" -R --full-index --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git -c core.fileMode=false add -- $MODULE_PATH
+    git -c core.fileMode=false diff --staged --src-prefix="b/" --dst-prefix="a/" -R --full-index --binary --relative=$MODULE_PATH -- $MODULE_PATH > $PATCH_FILE
+    git -c core.fileMode=false reset -- $MODULE_PATH
     git add -- $PATCH_FILE
     git commit -m"Create patch for $MODULE_NAME $OLD_VERSION."
   fi
