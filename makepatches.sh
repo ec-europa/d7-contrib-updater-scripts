@@ -62,4 +62,4 @@ else
   exit 1;
 fi
 
-find sites/all/modules/contrib -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | egrep "^[a-zA-Z_][a-zA-Z0-9]+$" | xargs -L1 sh $SCRIPT_DIR/makepatch.sh $DRUPAL_ROOT
+find sites/all/modules/contrib -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | egrep "^[a-zA-Z_][a-zA-Z0-9_]+$" | xargs -L1 sh $SCRIPT_DIR/makepatch.sh $DRUPAL_ROOT
