@@ -66,7 +66,7 @@ cd $DRUPAL_ROOT
 if [ -z "$(git status --porcelain -- $MODULE_PATH)" ]; then
   echo "Module directory $MODULE_PATH clean. Proceeding."
 else
-  echo "Module directory $MODULE_PATH contains uncommitted changes. Aborting."
+  echo "Module directory $MODULE_PATH contains uncommitted changes. Aborting makepatch.sh."
   exit 1;
 fi
 
