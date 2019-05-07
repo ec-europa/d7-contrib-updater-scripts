@@ -84,7 +84,7 @@ if [[`git status --porcelain $MODULE_PATH`]]; then
   git add $MODULE_PATH
   git commit --allow-empty -m"UPDATE $MODULE_NAME $OLD_VERSION -> $NEW_VERSION"
 
-  git revert HEAD^
+  git revert --no-edit HEAD^
   if [ $? ]; then
     echo "git revert HEAD^ failed. Aborting."
     exit 2;
