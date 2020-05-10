@@ -148,7 +148,7 @@ if [ $HACKED -eq 1 ]; then
   fi
 
   if [ -d /tmp/drush-dl ]; then
-    rm -r /tmp/drush-dl
+    rm -rf /tmp/drush-dl
   fi
 
   echo ""

@@ -30,7 +30,7 @@ fi
 
 # Download project in desired version in /tmp.
 if [ -d /tmp/drush-dl ]; then
-  rm -r /tmp/drush-dl
+  rm -rf /tmp/drush-dl
 fi
 mkdir /tmp/drush-dl
 cd /tmp/drush-dl
@@ -63,7 +63,7 @@ rm robots.txt
 rm update.php
 
 rsync -a /tmp/drush-dl/drupal/ $DRUPAL_ROOT/
-# rm -r /tmp/drush-dl/drupal
+# rm -rf /tmp/drush-dl/drupal
 
 # Optional script hook to run after core download.
 # This allows e.g. to remove files like CHANGELOG.txt

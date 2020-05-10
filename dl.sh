@@ -43,7 +43,7 @@ fi
 
 # Download project in desired version in /tmp.
 if [ -d /tmp/drush-dl ]; then
-  rm -r /tmp/drush-dl
+  rm -rf /tmp/drush-dl
 fi
 mkdir /tmp/drush-dl
 cd /tmp/drush-dl
