@@ -33,6 +33,7 @@ else
   PATCH_DIR="$(dirname $DRUPAL_ROOT)/patch"
 fi
 PATCH_FILE=$PATCH_DIR/core.patch
+CORE_POST_SH=$PATCH_DIR/core.post.sh
 
 if [ ! -d $PATCH_DIR ]; then
   echo ""
@@ -49,13 +50,6 @@ fi
 # Start in DRUPAL_ROOT
 cd $DRUPAL_ROOT
 
-# Abort if local changes exist in patch file path.
-# See https://stackoverflow.com/a/25149786/246724
-if [ ! -z "$(git -c core.fileMode=false status --porcelain)" ]; then
-  echo "Repository contains uncommitted changes. Aborting."
-  exit 1;
-fi
-
 # Check current version
 OLD_VERSION=$(sh $SCRIPT_DIR/core-getversion.sh $DRUPAL_ROOT)
 if [ -z "$OLD_VERSION" ]; then
@@ -67,82 +61,124 @@ echo "Existing core version: $OLD_VERSION."
 
 echo ""
 
-# Download existing version.
-echo "Download old version:"
-sh $SCRIPT_DIR/core-dl.sh $DRUPAL_ROOT $OLD_VERSION
-if [ $? -ne 0 ]; then
-  echo "Failed to download Drupal core $OLD_VERSION."
-  exit 3;
+# Download Drupal core in current version in /tmp.
+if [ -d /tmp/drush-dl ]; then
+  rm -rf /tmp/drush-dl
+fi
+mkdir /tmp/drush-dl
+cd /tmp/drush-dl
+
+drush dl -y --drupal-project-rename drupal-$OLD_VERSION
+
+if [ ! -d /tmp/drush-dl/drupal ]; then
+  echo "Failed to download drupal-$OLD_VERSION to /tmp/drush-dl/drupal."
+  exit 2;
+fi
+
+# Initialize git repository.
+cd /tmp/drush-dl/drupal
+git init
+
+if [ ! -d /tmp/drush-dl/drupal/.git ]; then
+  echo "Failed to initialize git repository in /tmp/drush-dl/drupal/.git."
+  exit 2;
+fi
+
+git commit -q --allow-empty -m"Initial empty commit."
+git tag INITIAL_EMPTY
+
+git -c core.fileMode=true add .
+git commit -q -m"Download drupal-$OLD_VERSION."
+git tag DL_CORE
+
+# Optional script hook to run after core download.
+# This allows e.g. to remove files like CHANGELOG.txt
+if [ -f $CORE_POST_SH ]; then
+  sh $CORE_POST_SH
+  git -c core.fileMode=true add .
+  git commit -q -m"Run core.post.sh."
+fi
+
+for PATCHFILE in "$PATCH_DIR/core/*.patch"
+do
+  git apply $PATCHFILE
+  git -c core.fileMode=true add .
+  git commit -q -m"Apply $PATCHFILE"
+done
+
+git tag POST
+
+
+# Create another directory with custom files.
+mkdir /tmp/drush-dl/drupal-custom
+cd /tmp/drush-dl/drupal-custom
+
+# Copy all top-level core files from project dir.
+for FILEPATH in /tmp/drush-dl/drupal/*.*; do
+  if [ -d $FILEPATH ]; then
+    echo "Directory with unexpected name $FILEPATH."
+    exit 2;
+  fi
+  FILENAME=$(basename "$FILEPATH")
+  if [ -e "$DRUPAL_ROOT/$FILENAME" ]; then
+    rsync "$DRUPAL_ROOT/$FILENAME" "/tmp/drush-dl/drupal-custom/$FILENAME"
+  fi
+done
+
+# Copy all top-level core directories from project dir.
+for DIRPATH in /tmp/drush-dl/drupal/*/; do
+  DIRNAME=$(basename "$DIRPATH")
+  [ "$DIRNAME" = "profiles" ] && continue
+  [ "$DIRNAME" = "sites" ] && continue
+  # This should not be a match, but we need to be double sure.
+  [ "$DIRNAME" = ".git" ] && continue
+  if [ -d "$DRUPAL_ROOT/$DIRNAME" ]; then
+    rsync -a "$DRUPAL_ROOT/$DIRNAME/" "/tmp/drush-dl/drupal-custom/$DIRNAME/"
+  fi
+done
+
+# Copy all core profile directories from project dir.
+mkdir /tmp/drush-dl/drupal-custom/profiles
+for DIRPATH in /tmp/drush-dl/drupal/profiles/*/; do
+  DIRNAME=$(basename "$DIRPATH")
+  if [ -d "$DRUPAL_ROOT/profiles/$DIRNAME" ]; then
+    rsync -a "$DRUPAL_ROOT/profiles/$DIRNAME/" "/tmp/drush-dl/drupal-custom/profiles/$DIRNAME/"
+  fi
+done
+
+# Copy some specific files.
+if [ -e "$DRUPAL_ROOT/.htaccess" ]; then
+  rsync -a "$DRUPAL_ROOT/.htaccess" "/tmp/drush-dl/drupal-custom/.htaccess"
+fi
+if [ -e "$DRUPAL_ROOT/.gitignore" ]; then
+  rsync -a "$DRUPAL_ROOT/.gitignore" "/tmp/drush-dl/drupal-custom/.gitignore"
+fi
+if [ -e "$DRUPAL_ROOT/profiles/README.txt" ]; then
+  rsync -a "$DRUPAL_ROOT/profiles/README.txt" "/tmp/drush-dl/drupal-custom/profiles/README.txt"
+fi
+if [ -e "$DRUPAL_ROOT/sites/default/default.settings.php" ]; then
+  mkdir -p "/tmp/drush-dl/drupal-custom/sites/default"
+  rsync -a "$DRUPAL_ROOT/sites/default/default.settings.php" "/tmp/drush-dl/drupal-custom/sites/default/default.settings.php"
+fi
+
+# Back to the first directory.
+cd /tmp/drush-dl/drupal
+
+# Delete all files again, using git revert + reset.
+git revert --no-edit INITIAL_EMPTY..POST > /dev/null
+git reset -q POST
+
+# Sync the custom code to this directory.
+rsync -a /tmp/drush-dl/drupal-custom/ /tmp/drush-dl/drupal/
+
+git -c core.fileMode=true add .
+git commit -q -m"Apply local changes copied from project."
+
+if [ $? -eq 0 ]; then
+  git diff --src-prefix="a/" --dst-prefix="b/" --full-index --patch --binary POST HEAD > $PATCH_FILE
+else
+  rm $PATCH_FILE
 fi
 
 echo ""
-
-# Check local changes
-if [ -z "$(git -c core.fileMode=false status --porcelain)" ]; then
-
-  HACKED=0
-  echo "Drupal core has no local modifications."
-  
-else
-
-  HACKED=1
-  echo "Drupal core has local modifications."
-fi
-
-if [ $HACKED -eq 1 ]; then
-
-  # Create the patch.
-  if [ -f $PATCH_FILE ]; then
-    # A patch file already exists.
-    # Call 'git add', to also include untracked files in the diff.
-    # Exclude /patch/ directory.
-    git add .
-    git reset HEAD patch
-    git -c core.fileMode=false diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch --binary > $PATCH_FILE
-    git reset HEAD
-    if [ -z "$(git -c core.fileMode=false status --porcelain $PATCH_FILE)" ]; then
-      echo "Existing patch for Drupal core $OLD_VERSION is already up to date."
-    else
-      echo "Update patch."
-      git add -- $PATCH_FILE
-      git commit -m"Update patch for Drupal core $OLD_VERSION."
-    fi
-  else
-    # A patch file does not already exists.
-    # Call 'git add', to also include untracked files in the diff.
-    # Exclude /patch/ directory.
-    git add .
-    git reset HEAD patch
-    git -c core.fileMode=false diff --src-prefix="b/" --dst-prefix="a/" --full-index -R --staged --patch --binary > $PATCH_FILE
-    git reset HEAD
-    git add -- $PATCH_FILE
-    git commit -m"Create patch for Drupal core $OLD_VERSION."
-  fi
-
-  if [ -d /tmp/drush-dl ]; then
-    rm -rf /tmp/drush-dl
-  fi
-
-  echo ""
-  echo "Commit:"
-  git add .
-  git commit -m"UNHACK Drupal core $OLD_VERSION"
-  if [ $? -ne 0 ]; then
-    echo "Failed to commit UNHACK changes. This is unexpected."
-    exit 3;
-  fi
-
-  # Discard last commit, without destroying other working tree changes.
-  git revert --no-edit HEAD
-  git reset HEAD^^
-
-else
-  # No hacks exist.
-  if [ -f $PATCH_FILE ]; then
-    echo "Delete patch $PATCH_FILE."
-    rm $PATCH_FILE
-    git add -u -- $PATCH_FILE
-    git commit -m"Delete patch for Drupal core $OLD_VERSION."
-  fi
-
-fi
+echo ""
